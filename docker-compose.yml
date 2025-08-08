@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - ENABLE_LOGGING=true
+      - STORAGE_TYPE=sqlite
+      - STORAGE_PATH=/app/data
+      - RETENTION_DAYS=7
+      - MAX_LOG_ROWS=10000
+      - MONITOR_INTERVAL=2
+      - LOG_LEVEL=INFO
+      - CORS_ORIGINS=http://localhost:3000
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    environment:
+      - REACT_APP_API_URL=http://localhost:8000
+    restart: unless-stopped
