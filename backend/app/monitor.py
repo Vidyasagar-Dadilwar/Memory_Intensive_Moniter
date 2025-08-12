@@ -131,29 +131,36 @@ class ProcessMonitor:
         
         return snapshot
     
-    async def kill_process(self, pid: int) -> Dict[str, Any]:
+    async def kill_process(self, pid: int, force: bool = False) -> Dict[str, Any]:
         """Attempt to terminate a process by PID"""
         try:
             process = psutil.Process(pid)
             process_name = process.name()
             
-            # Terminate the process
-            process.terminate()
-            
-            # Wait briefly to see if it terminates
-            gone, alive = psutil.wait_procs([process], timeout=3)
-            
-            if process in alive:
-                # Force kill if still alive
+            if force:
+                # Force kill immediately
                 process.kill()
                 return {
                     'success': True,
                     'message': f"Process {pid} ({process_name}) forcefully killed"
                 }
-            else:
+            
+            # Try graceful termination first
+            process.terminate()
+            
+            # Wait briefly to see if it terminates
+            try:
+                process.wait(timeout=3)
                 return {
                     'success': True,
                     'message': f"Process {pid} ({process_name}) terminated successfully"
+                }
+            except psutil.TimeoutExpired:
+                # Force kill if still alive after timeout
+                process.kill()
+                return {
+                    'success': True,
+                    'message': f"Process {pid} ({process_name}) forcefully killed after timeout"
                 }
                 
         except psutil.NoSuchProcess:

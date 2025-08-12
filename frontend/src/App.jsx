@@ -186,7 +186,7 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ pid }),
+        body: JSON.stringify({ pid, force: true }),
       });
       
       const result = await response.json();
